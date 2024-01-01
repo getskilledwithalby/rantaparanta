@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Worth Calculator - Results</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Future Net Worth</h1>
+        <div class="result-container">
+            <p>Your net worth after the specified period will be: <strong>${{ net_worth | round(2) }}</strong></p>
+            <p>Total contributions (initial amount + monthly savings): <strong>${{ total_contributions | round(2) }}</strong></p>
+            <p>Total interest earned: <strong>${{ interest_earned | round(2) }}</strong></p>
+        </div>
+        <a href="/" class="calculate-again-button">Calculate Again</a>
+    </div>
+</body>
+</html>

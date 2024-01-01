@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Worth Calculator</title>
+    <!-- Include Chart.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Net Worth Calculator</h1>
+        <form id="netWorthForm" onsubmit="submitForm(event)">
+            <input type="number" name="initial_amount" placeholder="Initial Amount" required>
+            <input type="number" name="annual_return" placeholder="Annual Return Rate (%)" required>
+            <input type="number" name="monthly_savings" placeholder="Monthly Savings" required>
+            <input type="number" name="years" placeholder="Number of Years" required>
+            <button type="submit">Calculate</button>
+        </form>
+        
+        <!-- Placeholder for error message -->
+        <p id="error-message" style="color: red;"></p>
+        
+        <!-- Results will be displayed here after calculation -->
+        <div id="results" style="display:none;">
+            <h2>The Results Are In</h2>
+            <p id="result-net-worth"></p>
+            <p id="result-total-contributions"></p>
+            <p id="result-interest-earned"></p>
+            <canvas id="netWorthChart"></canvas>
+            <button onclick="resetForm()">Reset</button>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript for form submission and chart drawing -->
+    <script>
+        function submitForm(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+
+            var formData = {
+                initial_amount: parseFloat(document.getElementsByName('initial_amount')[0].value),
+                monthly_savings: parseFloat(document.getElementsByName('monthly_savings')[0].value),
+                annual_return: parseFloat(document.getElementsByName('annual_return')[0].value),
+                years: parseInt(document.getElementsByName('years')[0].value)
+            };
+
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    document.getElementById('error-message').textContent = data.error;
+                } else {
+                    // Update the div with results
+                    document.getElementById('result-net-worth').textContent = 'Your net worth after the specified period will be: $' + data.net_worth.toFixed(2);
+                    document.getElementById('result-total-contributions').textContent = 'Total contributions (initial amount + monthly savings): $' + data.total_contributions.toFixed(2);
+                    document.getElementById('result-interest-earned').textContent = 'Total interest earned: $' + data.interest_earned.toFixed(2);
+
+                    // Show the results div
+                    document.getElementById('results').style.display = 'block';
+
+                    // Call a function to draw the chart with data.years_data
+                    drawChart(data.years_data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error-message').textContent = 'An error occurred while calculating. Please try again.';
+            });
+        }
+
+        function drawChart(yearsData) {
+            var ctx = document.getElementById('netWorthChart').getContext('2d');
+            if (window.netWorthChart instanceof Chart) {
+                window.netWorthChart.destroy(); // Destroy the old chart instance if it exists
+            }
+            window.netWorthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: yearsData.map(data => data.year.toString()),
+                    datasets: [
+                        {
+                            label: 'Total Contributions',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            data: yearsData.map(data => data.contributions),
+                            fill: false,
+                        },
+                        {
+                            label: 'Net Worth',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            data: yearsData.map(data => data.netWorth),
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Net Worth Over Time'
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('netWorthForm').reset();
+            if (window.netWorthChart instanceof Chart) {
+                window.netWorthChart.destroy(); // Destroy the chart instance
+            }
+        }
+    </script>
+</body>
+</html>
+
